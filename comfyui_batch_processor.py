@@ -14,8 +14,6 @@ class ComfyUIBatchProcessor:
     def __init__(self, server_address="127.0.0.1:8188"):
         self.server_address = server_address
         self.client_id = str(uuid.uuid4())
-
-        # Setup logging
         log_dir = Path('logs')
         log_dir.mkdir(exist_ok=True)
         logging.basicConfig(
@@ -27,15 +25,13 @@ class ComfyUIBatchProcessor:
             ]
         )
         self.logger = logging.getLogger(__name__)
-
-        # Workflow paths
         self.workflows = {
             'landscape': 'workflows/landscape.json',
             'portrait': 'workflows/portrait.json',
             'square': 'workflows/square.json'
         }
 
-        def parse_prompt_file(self, filepath):
+    def parse_prompt_file(self, filepath):
         """Parse prompt file dan ekstrak prompt dengan rasio (Versi Perbaikan)"""
         prompts = []
         try:
@@ -167,7 +163,7 @@ class ComfyUIBatchProcessor:
                             failed += 1
                             self.logger.error(f"   X Gagal queue: {ratio_type} {i+1}/{count}")
                         
-                        time.sleep(2) # Delay antar generation
+                        time.sleep(2) 
                     
                     except Exception as e:
                         failed += 1
@@ -208,4 +204,4 @@ if __name__ == "__main__":
         sys.exit(1)
         
     processor.process_prompts(prompt_file)
-
+            
