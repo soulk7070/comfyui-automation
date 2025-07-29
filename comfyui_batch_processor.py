@@ -35,37 +35,42 @@ class ComfyUIBatchProcessor:
             'square': 'workflows/square.json'
         }
 
-    def parse_prompt_file(self, filepath):
-        """Parse prompt file dan ekstrak prompt dengan rasio"""
+        def parse_prompt_file(self, filepath):
+        """Parse prompt file dan ekstrak prompt dengan rasio (Versi Perbaikan)"""
         prompts = []
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 for line_num, line in enumerate(f, 1):
                     line = line.strip()
-                    if not line:
+                    if not line or '(' not in line:
                         continue
                     
-                    pattern = r'^(.*?)\s*\(([^)]+):(\d+)\)(?:\s*,\s*\(([^)]+):(\d+)\))?(?:\s*,\s*\(([^)]+):(\d+)\))?$'
-                    match = re.match(pattern, line)
-                    
-                    if match:
-                        prompt_text = match.group(1).strip()
+                    try:
+                        # Pisahkan teks prompt utama dari bagian rasio
+                        prompt_text, ratio_part = line.rsplit(' (', 1)
+                        prompt_text = prompt_text.strip()
+                        
+                        # Regex untuk menemukan semua pasangan (nama):jumlah
+                        ratio_pattern = r'([^)]+)\):(\d+)'
+                        matches = re.findall(ratio_pattern, ratio_part)
+                        
+                        if not matches:
+                            self.logger.warning(f"Format rasio tidak valid di baris {line_num}: {line}")
+                            continue
+
                         ratios = []
+                        for name, count in matches:
+                            ratios.append({'type': name.strip(), 'count': int(count)})
                         
-                        for i in range(2, 8, 2):
-                            if match.group(i) and match.group(i+1):
-                                ratios.append({
-                                    'type': match.group(i).strip(),
-                                    'count': int(match.group(i+1))
-                                })
-                        
-                        prompts.append({
-                            'text': prompt_text,
-                            'ratios': ratios,
-                            'line_num': line_num
-                        })
-                    else:
-                        self.logger.warning(f"Format tidak valid di baris {line_num}: {line}")
+                        if ratios:
+                            prompts.append({
+                                'text': prompt_text,
+                                'ratios': ratios,
+                                'line_num': line_num
+                            })
+
+                    except ValueError:
+                        self.logger.warning(f"Format tidak valid di baris {line_num} (kesalahan pemisahan): {line}")
         except FileNotFoundError:
             self.logger.error(f"File prompt tidak ditemukan: {filepath}")
         return prompts
